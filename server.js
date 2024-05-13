@@ -6,6 +6,7 @@ const app = express();
 const PORT = 3000;
 const nodemailer = require("nodemailer");
 require("dotenv").config();
+mongoose.connect('mongodb://mongo:27017/tokenDB', { useNewUrlParser: true, useUnifiedTopology: true });
 
 const transporter = nodemailer.createTransport({
   service: "gmail", // For Gmail, use 'gmail'
@@ -41,9 +42,7 @@ const tokenSchema = new mongoose.Schema({
 
 const Token = mongoose.model("Token", tokenSchema);
 
-mongoose.connect("mongodb://localhost:27017/tokenDB", {
-  useNewUrlParser: true,
-});
+
 
 app.post("/fetch-token", async (req, res) => {
   const apiUrl = "https://eu.api.blizzard.com/data/wow/token/index";
