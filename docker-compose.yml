@@ -7,10 +7,6 @@ services:
       - "3000:3000"
     depends_on:
       - mongo
-    environment:
-      - EMAIL_USERNAME=${EMAIL_USERNAME}
-      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-      - BATTLE_NET_TOKEN=${BATTLE_NET_TOKEN}
     networks:
       - app-network
 

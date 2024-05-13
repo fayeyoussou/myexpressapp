@@ -64,7 +64,7 @@ app.post("/fetch-token", async (req, res) => {
     let isHighest = true;
     if (
       historicalPrices.length > 0 &&
-      historicalPrices[0].price >= currentPrice
+      historicalPrices[0].price >= newToken.price
     ) {
       isHighest = false;
     }
