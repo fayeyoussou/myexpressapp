@@ -4,7 +4,7 @@ services:
     container_name: node_app
     build: .
     ports:
-      - "3000:3000"
+      - "80:3000"
     depends_on:
       - mongo
     networks:
