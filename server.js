@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 function sendEmail(subject, text) {
   const mailOptions = {
     from: process.env.EMAIL_USERNAME, // Sender address
-    to: "fayeyoussoupha@gmail.com", // List of recipients
+    to: "fayeyoussouphadev@gmail.com", // List of recipients
     subject: subject,
     text: text,
   };
@@ -63,7 +63,7 @@ app.post("/fetch-token", async (req, res) => {
     await newToken.save();
     let isHighest = true;
     if (
-      historicalPrices.length > 0 &&
+      historicalPrices.length > 200 &&
       historicalPrices[0].price >= newToken.price
     ) {
       isHighest = false;
