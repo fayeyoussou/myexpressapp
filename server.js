@@ -6,7 +6,10 @@ const app = express();
 const PORT = 3000;
 const nodemailer = require("nodemailer");
 require("dotenv").config();
-mongoose.connect('mongodb://mongo:27017/tokenDB', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect("mongodb://mongo:27017/tokenDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 const transporter = nodemailer.createTransport({
   service: "gmail", // For Gmail, use 'gmail'
@@ -42,8 +45,6 @@ const tokenSchema = new mongoose.Schema({
 
 const Token = mongoose.model("Token", tokenSchema);
 
-
-
 app.post("/fetch-token", async (req, res) => {
   const apiUrl = "https://eu.api.blizzard.com/data/wow/token/index";
   try {
@@ -62,11 +63,12 @@ app.post("/fetch-token", async (req, res) => {
     }).sort({ price: -1 });
     await newToken.save();
     let isHighest = true;
-    if (
-      historicalPrices.length > 200 &&
-      historicalPrices[0].price >= newToken.price
-    ) {
-      isHighest = false;
+    if (historicalPrices.length > 200) {
+        historicalPrices.forEach(token => {
+            token.price >= newToken.price;
+        })
+    } else {
+        isHighest = false;
     }
     if (isHighest) {
       sendEmail(
