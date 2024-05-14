@@ -64,11 +64,11 @@ app.post("/fetch-token", async (req, res) => {
     await newToken.save();
     let isHighest = true;
     if (historicalPrices.length > 200) {
-        historicalPrices.forEach(token => {
-            token.price >= newToken.price;
-        })
+      historicalPrices.forEach((token) => {
+        token.price >= newToken.price;
+      });
     } else {
-        isHighest = false;
+      isHighest = false;
     }
     if (isHighest) {
       sendEmail(
@@ -89,6 +89,68 @@ app.get("/tokens", async (req, res) => {
     res.json(tokens);
   } catch (error) {
     sendEmail(`error one get token `, error.message);
+  }
+});
+
+app.get("/tokens/monthly", async (req, res) => {
+  try {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const monthlyTokens = await Token.find({
+      timestamp: { $gte: thirtyDaysAgo, $lt: now },
+    });
+    
+    if (monthlyTokens.length === 0) {
+      res.json({ message: "No token data available for the last 30 days." });
+      return;
+    }
+    
+    const prices = monthlyTokens.map(token => token.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const meanPrice = prices.reduce((acc, price) => acc + price, 0) / prices.length;
+    
+    res.json({
+      minPrice: minPrice,
+      maxPrice: maxPrice,
+      meanPrice: meanPrice.toFixed(2),
+    });
+  } catch (error) {
+    res.status(500).send(error.toString());
+    sendEmail(`Error fetching monthly tokens`, error.message);
+  }
+});
+
+app.get("/tokens/weekly", async (req, res) => {
+  try {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const weeklyTokens = await Token.find({
+      timestamp: { $gte: sevenDaysAgo, $lt: now },
+    });
+    
+    if (weeklyTokens.length === 0) {
+      res.json({ message: "No token data available for the last 7 days." });
+      return;
+    }
+    
+    const prices = weeklyTokens.map(token => token.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const meanPrice = prices.reduce((acc, price) => acc + price, 0) / prices.length;
+    
+    res.json({
+      minPrice: minPrice,
+      maxPrice: maxPrice,
+      meanPrice: meanPrice.toFixed(2),
+    });
+  } catch (error) {
+    res.status(500).send(error.toString());
+    sendEmail(`Error fetching weekly tokens`, error.message);
   }
 });
 
