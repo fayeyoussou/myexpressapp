@@ -72,7 +72,7 @@ app.post("/fetch-token", async (req, res) => {
     }
     if (isHighest) {
       sendEmail(
-        "Highest price since last 30 dats",
+        `Highest price last 30 days  : ${now}`,
         `the highest price is now ${newToken.price} `
       );
     }
