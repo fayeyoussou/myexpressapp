@@ -84,11 +84,14 @@ app.post("/fetch-token", async (req, res) => {
       );
       await getToken();
     }
+    console.log(token);
     const response = await axios.get(apiUrl, {
       headers: { Authorization: `Bearer ${token}` },
       params: { namespace: "dynamic-eu", locale: "en_US" },
     });
     const newToken = new Token({ price: response.data.price });
+
+    console.log(newToken)
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
