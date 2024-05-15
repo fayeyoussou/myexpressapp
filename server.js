@@ -114,7 +114,7 @@ app.post("/fetch-token", async (req, res) => {
         `the highest price is now ${newToken.price} `
       );
     }
-    res.send("Token price fetched and stored");
+    res.send(newToken);
   } catch (error) {
     res.status(500).send(error.toString());
     sendEmail(`error one fetch token `, error.message);
