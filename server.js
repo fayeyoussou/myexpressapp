@@ -1,58 +1,31 @@
 const mongoose = require("mongoose");
+const express = require("express");
 const bodyParser = require("body-parser");
 const axios = require("axios");
-const express = require("express");
+const nodemailer = require("nodemailer");
+
 const app = express();
 const PORT = 3000;
-const nodemailer = require("nodemailer");
-var token = "";
-const DIVIDER = 10000;
+const VALUE_DIVISOR = 10000;
+
 require("dotenv").config();
 mongoose.connect("mongodb://mongo:27017/tokenDB", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-mongoose.connect("mongodb://mongo:27017/versioning", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-async function getToken() {
-  const authString = Buffer.from(
-    `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`
-  ).toString("base64");
-  try {
-    const response = await fetch("https://oauth.battle.net/token", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${authString}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: "grant_type=client_credentials",
-    });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log(data);
-    token = data.access_token;
-  } catch (error) {
-    console.error("Error:", error);
-  }
-}
 const transporter = nodemailer.createTransport({
-  service: "gmail", // For Gmail, use 'gmail'
+  service: "gmail",
   auth: {
-    user: process.env.EMAIL_USERNAME, // Your email
-    pass: process.env.EMAIL_PASSWORD, // Your email password
+    user: process.env.EMAIL_USERNAME,
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
 
 function sendEmail(subject, text) {
   const mailOptions = {
-    from: process.env.EMAIL_USERNAME, // Sender address
-    to: "fayeyoussouphadev@gmail.com", // List of recipients
+    from: process.env.EMAIL_USERNAME,
+    to: "fayeyoussouphadev@gmail.com",
     subject: subject,
     text: text,
   };
@@ -75,8 +48,35 @@ const tokenSchema = new mongoose.Schema({
 
 const Token = mongoose.model("Token", tokenSchema);
 
+let token = "";
+
+async function getToken() {
+  const authString = Buffer.from(
+    `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`
+  ).toString("base64");
+  try {
+    const response = await axios.post("https://oauth.battle.net/token", null, {
+      params: {
+        grant_type: "client_credentials",
+      },
+      headers: {
+        Authorization: `Basic ${authString}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
+
+    if (!response.data.access_token) {
+      throw new Error("Access token not found in response");
+    }
+
+    return response.data.access_token;
+  } catch (error) {
+    console.error("Error fetching token:", error.message);
+    throw error;
+  }
+}
+
 app.post("/fetch-token", async (req, res) => {
-  const apiUrl = "https://eu.api.blizzard.com/data/wow/token/index";
   try {
     const now = new Date();
     const isTokenEmpty = token.length == 0;
@@ -86,9 +86,10 @@ app.post("/fetch-token", async (req, res) => {
       console.log(
         "Condition met: Token is empty or the current time is 11:30-11:59 AM/PM"
       );
-      await getToken();
+      token = await getToken();
     }
     console.log(token);
+    const apiUrl = "https://eu.api.blizzard.com/data/wow/token/index";
     const response = await axios.get(apiUrl, {
       headers: { Authorization: `Bearer ${token}` },
       params: { namespace: "dynamic-eu", locale: "en_US" },
@@ -199,41 +200,41 @@ app.get("/tokens/weekly", async (req, res) => {
     sendEmail(`Error fetching weekly tokens`, error.message);
   }
 });
-app.get("/tokens/dayly", async (req, res) => {
+
+app.get("/tokens/daily", async (req, res) => {
   try {
     const now = new Date();
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 1);
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    const weeklyTokens = await Token.find({
-      timestamp: { $gte: sevenDaysAgo, $lt: now },
+    const dailyTokens = await Token.find({
+      timestamp: { $gte: yesterday, $lt: now },
     });
 
-    if (weeklyTokens.length === 0) {
-      res.json({ message: "No token data available for the last 7 days." });
+    if (dailyTokens.length === 0) {
+      res.json({ message: "No token data available for yesterday." });
       return;
     }
 
-    const prices = weeklyTokens.map((token) => token.price);
+    const prices = dailyTokens.map((token) => token.price);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     const meanPrice =
       prices.reduce((acc, price) => acc + price, 0) / prices.length;
     sendEmail(
-      `price report : ${now.getDate()}/${now.getMonth()}/${now.getFullYear()}`,
-      `<h1>Minimum : </h1>${minPrice/DIVIDER}
-      <h1>Maximum</h1> : ${maxPrice/DIVIDER}
-      <h1>Moyenne</h1> : ${meanPrice.toFixed(2)/DIVIDER}
-      `
+      `Price report for ${now.getDate()}/${now.getMonth()}/${now.getFullYear()}`,
+      `<h1>Minimum Price:</h1> ${minPrice / VALUE_DIVISOR}<br>
+       <h1>Maximum Price:</h1> ${maxPrice / VALUE_DIVISOR}<br>
+       <h1>Mean Price:</h1> ${meanPrice.toFixed(2) / VALUE_DIVISOR}`
     );
     res.json({
-      minPrice: minPrice / DIVIDER,
-      maxPrice: maxPrice / DIVIDER,
-      meanPrice: meanPrice.toFixed(2) / DIVIDER,
+      minPrice: minPrice / VALUE_DIVISOR,
+      maxPrice: maxPrice / VALUE_DIVISOR,
+      meanPrice: meanPrice.toFixed(2) / VALUE_DIVISOR,
     });
   } catch (error) {
     res.status(500).send(error.toString());
-    sendEmail(`Error fetching weekly tokens`, error.message);
+    sendEmail(`Error fetching daily tokens`, error.message);
   }
 });
 
