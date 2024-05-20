@@ -27,7 +27,34 @@ function sendEmail(subject, text) {
     from: process.env.EMAIL_USERNAME,
     to: "fayeyoussouphadev@gmail.com",
     subject: subject,
-    text: text,
+    html:  `
+    <html>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+          }
+          h1 {
+            color: #333333;
+            font-size: 24px;
+            margin-bottom: 10px;
+          }
+          p {
+            color: #666666;
+            font-size: 16px;
+            margin-bottom: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>${subject}</h1>
+        ${text}
+        <p>Thank you for using our service.</p>
+      </body>
+    </html>
+  `,
+
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
@@ -221,12 +248,14 @@ app.get("/tokens/daily", async (req, res) => {
     const maxPrice = Math.max(...prices);
     const meanPrice =
       prices.reduce((acc, price) => acc + price, 0) / prices.length;
-    sendEmail(
-      `Price report for ${now.getDate()}/${now.getMonth()}/${now.getFullYear()}`,
-      `<h1>Minimum Price:</h1> ${minPrice / VALUE_DIVISOR}<br>
-       <h1>Maximum Price:</h1> ${maxPrice / VALUE_DIVISOR}<br>
-       <h1>Mean Price:</h1> ${meanPrice.toFixed(2) / VALUE_DIVISOR}`
-    );
+      sendEmail(
+        `Price report for ${now.getDate()}/${now.getMonth()}/${now.getFullYear()}`,
+        `<html><body>
+         <b>Minimum Price:</b> ${minPrice / VALUE_DIVISOR}<br>
+         <b>Maximum Price:</b> ${maxPrice / VALUE_DIVISOR}<br>
+         <b>Mean Price:</b> ${meanPrice.toFixed(2) / VALUE_DIVISOR}
+         </body></html>`
+      );
     res.json({
       minPrice: minPrice / VALUE_DIVISOR,
       maxPrice: maxPrice / VALUE_DIVISOR,
