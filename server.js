@@ -16,6 +16,9 @@ mongoose.connect("mongodb://mongo:27017/versioning", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+
+const VALUE_DIVISOR = 10000; // Define the constant for value division
+
 async function getToken() {
   const authString = Buffer.from(
     `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`
@@ -41,6 +44,7 @@ async function getToken() {
     console.error("Error:", error);
   }
 }
+
 const transporter = nodemailer.createTransport({
   service: "gmail", // For Gmail, use 'gmail'
   auth: {
@@ -95,7 +99,7 @@ app.post("/fetch-token", async (req, res) => {
     });
     const newToken = new Token({ price: response.data.price });
 
-    console.log(newToken)
+    console.log(newToken);
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -107,7 +111,7 @@ app.post("/fetch-token", async (req, res) => {
     let isHighest = true;
     if (historicalPrices.length > 200) {
       historicalPrices.forEach((token) => {
-        if(token.price >= newToken.price){
+        if (token.price >= newToken.price) {
           isHighest = false;
         }
       });
@@ -160,7 +164,7 @@ app.get("/tokens/monthly", async (req, res) => {
     res.json({
       minPrice: minPrice,
       maxPrice: maxPrice,
-      meanPrice: meanPrice.toFixed(2),
+      meanPrice: (meanPrice / VALUE_DIVISOR).toFixed(2),
     });
   } catch (error) {
     res.status(500).send(error.toString());
@@ -192,42 +196,51 @@ app.get("/tokens/weekly", async (req, res) => {
     res.json({
       minPrice: minPrice,
       maxPrice: maxPrice,
-      meanPrice: meanPrice.toFixed(2),
+      meanPrice: (meanPrice / VALUE_DIVISOR).toFixed(2),
     });
   } catch (error) {
     res.status(500).send(error.toString());
     sendEmail(`Error fetching weekly tokens`, error.message);
   }
 });
-app.get("/tokens/dayly", async (req, res) => {
+
+app.get("/tokens/daily", async (req, res) => {
   try {
     const now = new Date();
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 1);
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    const weeklyTokens = await Token.find({
-      timestamp: { $gte: sevenDaysAgo, $lt: now },
+    const dailyTokens = await Token.find({
+      timestamp: { $gte: yesterday, $lt: now },
     });
 
-    if (weeklyTokens.length === 0) {
-      res.json({ message: "No token data available for the last 7 days." });
+    if (dailyTokens.length === 0) {
+      res.json({ message: "No token data available for yesterday." });
       return;
     }
 
-    const prices = weeklyTokens.map((token) => token.price);
+    const prices = dailyTokens.map((token) => token.price);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     const meanPrice =
       prices.reduce((acc, price) => acc + price, 0) / prices.length;
 
+    sendEmail(
+      `Price report for ${yesterday.getDate()}/${yesterday.getMonth()}/${yesterday.getFullYear()}`,
+      `<h1>Minimum : </h1>${minPrice / VALUE_DIVISOR}
+      <h1>Maximum</h1> : ${maxPrice / VALUE_DIVISOR}
+      <h1>Moyenne</h1> : ${(meanPrice / VALUE_DIVISOR).toFixed(2)}
+      `
+    );
+
     res.json({
-      minPrice: minPrice/10000,
-      maxPrice: maxPrice/10000,
-      meanPrice: meanPrice.toFixed(2)/10000,
+      minPrice: minPrice / VALUE_DIVISOR,
+      maxPrice: maxPrice / VALUE_DIVISOR,
+      meanPrice: (meanPrice / VALUE_DIVISOR).toFixed(2),
     });
   } catch (error) {
     res.status(500).send(error.toString());
-    sendEmail(`Error fetching weekly tokens`, error.message);
+    sendEmail(`Error fetching daily tokens`, error.message);
   }
 });
 
