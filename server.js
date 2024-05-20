@@ -36,9 +36,12 @@ function sendEmail(subject, text) {
             padding: 20px;
           }
           h1 {
-            color: #333333;
+            color: #57467B;
             font-size: 24px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+          }
+          strong {
+            color : #E07A5F
           }
           p {
             color: #666666;
@@ -144,7 +147,9 @@ app.post("/fetch-token", async (req, res) => {
     if (isHighest) {
       sendEmail(
         `Highest price last 30 days  : ${now}`,
-        `the highest price is now ${newToken.price.toFixed(2)} `
+        `Price is at its peak : <strong>${newToken.price.toFixed(0)}</strong><br>
+        <p>Run and go buy a token</p>
+         `
       );
     }
     res.send(newToken);
@@ -250,9 +255,9 @@ app.get("/tokens/daily", async (req, res) => {
     sendEmail(
       `Price report for ${now.getDate()}/${now.getMonth()}/${now.getFullYear()}`,
       `<html><body>
-         <b>Minimum Price:</b> ${(minPrice / VALUE_DIVISOR).toFixed(2)}<br>
-         <b>Maximum Price:</b> ${(maxPrice / VALUE_DIVISOR).toFixed(2)}<br>
-         <b>Mean Price:</b> ${(meanPrice / VALUE_DIVISOR).toFixed(2)}
+         <strong>Minimum Price:</strong> ${(minPrice / VALUE_DIVISOR).toFixed(2)}<br>
+         <strong>Maximum Price:</strong> ${(maxPrice / VALUE_DIVISOR).toFixed(2)}<br>
+         <strong>Mean Price:</strong> ${(meanPrice / VALUE_DIVISOR).toFixed(2)}
          </body></html>`
     );
     res.json({
