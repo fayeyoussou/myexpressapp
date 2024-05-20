@@ -12,6 +12,10 @@ mongoose.connect("mongodb://mongo:27017/tokenDB", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+mongoose.connect("mongodb://mongo:27017/versioning", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 async function getToken() {
   const authString = Buffer.from(
     `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`
@@ -103,7 +107,9 @@ app.post("/fetch-token", async (req, res) => {
     let isHighest = true;
     if (historicalPrices.length > 200) {
       historicalPrices.forEach((token) => {
-        token.price >= newToken.price;
+        if(token.price >= newToken.price){
+          isHighest = false;
+        }
       });
     } else {
       isHighest = false;
