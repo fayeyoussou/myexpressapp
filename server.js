@@ -252,7 +252,7 @@ app.get("/tokens/daily", async (req, res) => {
       `<html><body>
          <b>Minimum Price:</b> ${(minPrice / VALUE_DIVISOR).toFixed(2)}<br>
          <b>Maximum Price:</b> ${(maxPrice / VALUE_DIVISOR).toFixed(2)}<br>
-         <b>Mean Price:</b> ${(meanPrice.toFixed / VALUE_DIVISOR).toFixed(2)}
+         <b>Mean Price:</b> ${(meanPrice / VALUE_DIVISOR).toFixed(2)}
          </body></html>`
     );
     res.json({
