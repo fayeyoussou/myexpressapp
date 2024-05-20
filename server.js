@@ -27,7 +27,7 @@ function sendEmail(subject, text) {
     from: process.env.EMAIL_USERNAME,
     to: "fayeyoussouphadev@gmail.com",
     subject: subject,
-    html:  `
+    html: `
     <html>
       <head>
         <style>
@@ -54,7 +54,6 @@ function sendEmail(subject, text) {
       </body>
     </html>
   `,
-
   };
 
   transporter.sendMail(mailOptions, function (error, info) {
@@ -145,7 +144,7 @@ app.post("/fetch-token", async (req, res) => {
     if (isHighest) {
       sendEmail(
         `Highest price last 30 days  : ${now}`,
-        `the highest price is now ${newToken.price} `
+        `the highest price is now ${newToken.price.toFixed(2)} `
       );
     }
     res.send(newToken);
@@ -186,9 +185,9 @@ app.get("/tokens/monthly", async (req, res) => {
       prices.reduce((acc, price) => acc + price, 0) / prices.length;
 
     res.json({
-      minPrice: minPrice,
-      maxPrice: maxPrice,
-      meanPrice: meanPrice.toFixed(2),
+      minPrice: (minPrice / VALUE_DIVISOR).toFixed(2),
+      maxPrice: (maxPrice / VALUE_DIVISOR).toFixed(2),
+      meanPrice: (meanPrice / VALUE_DIVISOR).toFixed(2),
     });
   } catch (error) {
     res.status(500).send(error.toString());
@@ -218,9 +217,9 @@ app.get("/tokens/weekly", async (req, res) => {
       prices.reduce((acc, price) => acc + price, 0) / prices.length;
 
     res.json({
-      minPrice: minPrice,
-      maxPrice: maxPrice,
-      meanPrice: meanPrice.toFixed(2),
+      minPrice: (minPrice / VALUE_DIVISOR).toFixed(2),
+      maxPrice: (maxPrice / VALUE_DIVISOR).toFixed(2),
+      meanPrice: (meanPrice / VALUE_DIVISOR).toFixed(2),
     });
   } catch (error) {
     res.status(500).send(error.toString());
@@ -248,18 +247,18 @@ app.get("/tokens/daily", async (req, res) => {
     const maxPrice = Math.max(...prices);
     const meanPrice =
       prices.reduce((acc, price) => acc + price, 0) / prices.length;
-      sendEmail(
-        `Price report for ${now.getDate()}/${now.getMonth()}/${now.getFullYear()}`,
-        `<html><body>
-         <b>Minimum Price:</b> ${minPrice / VALUE_DIVISOR}<br>
-         <b>Maximum Price:</b> ${maxPrice / VALUE_DIVISOR}<br>
-         <b>Mean Price:</b> ${meanPrice.toFixed(2) / VALUE_DIVISOR}
+    sendEmail(
+      `Price report for ${now.getDate()}/${now.getMonth()}/${now.getFullYear()}`,
+      `<html><body>
+         <b>Minimum Price:</b> ${(minPrice / VALUE_DIVISOR).toFixed(2)}<br>
+         <b>Maximum Price:</b> ${(maxPrice / VALUE_DIVISOR).toFixed(2)}<br>
+         <b>Mean Price:</b> ${(meanPrice.toFixed / VALUE_DIVISOR).toFixed(2)}
          </body></html>`
-      );
+    );
     res.json({
-      minPrice: minPrice / VALUE_DIVISOR,
-      maxPrice: maxPrice / VALUE_DIVISOR,
-      meanPrice: meanPrice.toFixed(2) / VALUE_DIVISOR,
+      minPrice: (minPrice / VALUE_DIVISOR).toFixed(2),
+      maxPrice: (maxPrice / VALUE_DIVISOR).toFixed(2),
+      meanPrice: (meanPrice / VALUE_DIVISOR).toFixed(2),
     });
   } catch (error) {
     res.status(500).send(error.toString());
