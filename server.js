@@ -199,6 +199,37 @@ app.get("/tokens/weekly", async (req, res) => {
     sendEmail(`Error fetching weekly tokens`, error.message);
   }
 });
+app.get("/tokens/dayly", async (req, res) => {
+  try {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 1);
+
+    const weeklyTokens = await Token.find({
+      timestamp: { $gte: sevenDaysAgo, $lt: now },
+    });
+
+    if (weeklyTokens.length === 0) {
+      res.json({ message: "No token data available for the last 7 days." });
+      return;
+    }
+
+    const prices = weeklyTokens.map((token) => token.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const meanPrice =
+      prices.reduce((acc, price) => acc + price, 0) / prices.length;
+
+    res.json({
+      minPrice: minPrice/10000,
+      maxPrice: maxPrice/10000,
+      meanPrice: meanPrice.toFixed(2)/10000,
+    });
+  } catch (error) {
+    res.status(500).send(error.toString());
+    sendEmail(`Error fetching weekly tokens`, error.message);
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
